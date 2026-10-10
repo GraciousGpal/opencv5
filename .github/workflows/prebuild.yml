@@ -76,7 +76,7 @@ jobs:
       # prebuild-linux.sh names the install directory by its own key (image
       # digest, tarball SHA-256, build-opencv.sh), so a stale restore is
       # never used by mistake
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .opencv-cache
           key: opencv-linux-${{ matrix.arch }}-${{ matrix.libc }}-${{ hashFiles('native/build-opencv.sh', 'native/prebuild-linux.sh') }}
@@ -150,7 +150,7 @@ jobs:
         with:
           node-version: 22
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: opencv
         with:
           path: C:/opencv5-cv
@@ -223,7 +223,7 @@ jobs:
       - name: Where the OpenCV build goes
         run: echo "OPENCV_PREFIX=$HOME/opencv5-cv" >> "$GITHUB_ENV"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: opencv
         with:
           path: ~/opencv5-cv

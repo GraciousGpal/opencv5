@@ -1,4 +1,20 @@
 {
+	"darwin-arm64/opencv5.node": {
+		"size": 5626464,
+		"sha256": "3999167e780a6dee727f9b8de0cc372203da442df349fe6a26f3ca85fc395f5e"
+	},
+	"darwin-x64/opencv5.node": {
+		"size": 6345192,
+		"sha256": "07715f090d869ad25ff3cde48bc68c598c02c76e5381f841dbb9c677b3839c2e"
+	},
+	"linux-arm64/opencv5.glibc.node": {
+		"size": 5713872,
+		"sha256": "e5110226df2ab1329e1a53c5f5b7a7ff3ebec3d93a0afa60fb2dd5b1b7b92d4c"
+	},
+	"linux-arm64/opencv5.musl.node": {
+		"size": 6039456,
+		"sha256": "d8875969aa6218009b6f3c277eebb7482281aec71738db298c70620030a2f359"
+	},
 	"linux-x64/opencv5.glibc.node": {
 		"size": 6524632,
 		"sha256": "4602771f58da4180f96c5e60c9198de747b4febf1f26b62350de3ed9f628f899"
@@ -8,7 +24,7 @@
 		"sha256": "db20ed3aab037ef282dc25b1376ad733faad13a040a072cffe93c2aa77098aec"
 	},
 	"win32-x64/opencv5.node": {
-		"size": 5061120,
-		"sha256": "3a378f01dbe7c5810c8fb6ebc995ce84e173b00423f9c741b401eab6f310b5f3"
+		"size": 5049856,
+		"sha256": "578a2818a245ba9450d3047e61bcebd513fd065646debce8283228170058c445"
 	}
 }

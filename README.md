@@ -6,10 +6,9 @@ ORB + ECC affine alignment. Not general OpenCV bindings - the ops
 [node-red-contrib-vision-tools](https://github.com/GraciousGpal/node-red-contrib-vision-tools)
 needs, done well:
 
-- **Prebuilt, no toolchain.** One binary per platform: Linux x64 (glibc
-  2.17+ and musl) and Windows x64 are built and tested; Linux arm64 and
-  macOS x64/arm64 come from the CI workflow, which has not run yet. No
-  install script; each binary's size and SHA-256 are checked against
+- **Prebuilt, no toolchain.** One binary per platform: Linux x64 and
+  arm64 (glibc 2.17+ and musl), Windows x64, macOS x64 and arm64, each
+  built and tested on its own CI runner. No install script; each binary's size and SHA-256 are checked against
   `prebuilds/manifest.json` before it is opened.
 - **Any CPU of its arch, the same bytes on all.** Built for the baseline
   (x86-64-v2: SSE4.2 + POPCNT; arm64: NEON) with nothing chosen at run
@@ -83,14 +82,20 @@ Also: `load()` (the addon, or a throw saying why it does not load here),
 does not load is remembered for the process, as nothing that decides it
 changes while it runs; `_reset()` forgets it.
 
-The binaries built so far (`prebuilds/manifest.json` holds their sizes
-and SHA-256; the Linux ones rebuild to the same bytes):
+The shipped binaries (`prebuilds/manifest.json` holds their sizes and
+SHA-256). The Linux ones rebuild to the same bytes with
+`native/prebuild-linux.sh`; the Windows and macOS ones are the bytes their
+CI runners built and tested:
 
 | binary | bytes | SHA-256 |
 |---|---|---|
+| darwin-arm64/opencv5.node | 5626464 | `3999167e780a6dee727f9b8de0cc372203da442df349fe6a26f3ca85fc395f5e` |
+| darwin-x64/opencv5.node | 6345192 | `07715f090d869ad25ff3cde48bc68c598c02c76e5381f841dbb9c677b3839c2e` |
+| linux-arm64/opencv5.glibc.node | 5713872 | `e5110226df2ab1329e1a53c5f5b7a7ff3ebec3d93a0afa60fb2dd5b1b7b92d4c` |
+| linux-arm64/opencv5.musl.node | 6039456 | `d8875969aa6218009b6f3c277eebb7482281aec71738db298c70620030a2f359` |
 | linux-x64/opencv5.glibc.node | 6524632 | `4602771f58da4180f96c5e60c9198de747b4febf1f26b62350de3ed9f628f899` |
 | linux-x64/opencv5.musl.node | 7026640 | `db20ed3aab037ef282dc25b1376ad733faad13a040a072cffe93c2aa77098aec` |
-| win32-x64/opencv5.node | 5061120 | `3a378f01dbe7c5810c8fb6ebc995ce84e173b00423f9c741b401eab6f310b5f3` |
+| win32-x64/opencv5.node | 5049856 | `578a2818a245ba9450d3047e61bcebd513fd065646debce8283228170058c445` |
 
 ## Building
 
