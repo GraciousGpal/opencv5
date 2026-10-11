@@ -50,14 +50,18 @@ applies to jpg and webp). `fmt` `raw` (or omitted) returns raw.
 |---|---|
 | `colorConvert(image, target, [fmt], [quality])` | `cvtColor` to `target` (any pair of the colour spaces above); a copy when they match. `image` may also be an encoded Buffer (jpg/png/webp/tiff..., decoded by sharp at its own channel count, grey + alpha as RGBA, no EXIF rotation). |
 | `resize(image, wMode, w, hMode, h, [fmt], [quality])` | `INTER_LINEAR`. Mode `num` is pixels, `pct` a percentage, `scale` a factor; a 0 on one side keeps the aspect ratio. |
-| `filter(image, type, kernel, intensity, [fmt], [quality])` | `otsu`: Gaussian blur (kernel 3-31, sigma 0) then Otsu threshold to a 0/255 mask; the reply also carries `blurred`, the blurred grey as a raw image (the bridge this replaces wrote it back over the caller's input instead - nothing here does); `edge`: Sobel magnitude, \|gx\|/2 + \|gy\|/2 times `intensity`, kernel 3-7 (a chosen bound, not a correctness limit). A colour input is taken to grey first. |
+| `filter(image, type, kernel, intensity, [fmt], [quality])` | `otsu`: Gaussian blur (kernel 3-31, sigma 0) then Otsu threshold to a 0/255 mask; the reply also carries `blurred`, the blurred grey as a raw image (the input is left as it was); `edge`: Sobel magnitude, \|gx\|/2 + \|gy\|/2 times `intensity`, kernel 3-7 (a chosen bound, not a correctness limit). A colour input is taken to grey first. |
 | `crop(image, x, y, w, h, normalized, [fmt], [quality])` | A copy of the rect, clamped into the frame; `normalized` reads x/y/w/h as fractions of the frame. Non-numbers are TypeErrors, NaN or infinite values and a non-positive size RangeErrors. |
 | `rotate(image, angleDeg, [padColor], [fmt], [quality])` | `getRotationMatrix2D(centre, angleDeg)` into a canvas grown to hold the rotated frame (each side `Math.trunc` of the rotated extent), re-centred; bilinear, the border in `padColor` (`#rrggbb`; a grey image takes its luma). |
 | `imageAlign(reference, target, scale, iterations, epsilon, fmt, quality, pngOptimize, returnImage, polygon, motion, pipeline, eccRefine, detector)` | Grey images. ORB (800 features, 1.2, 5 levels) on copies at `scale`, Lowe ratio 0.75, `estimateAffine2D` (USAC MAGSAC, 5 px), then ECC (`iterations`, `epsilon`) from that seed - skipped in `eccRefine` `auto` when the seed has 50 inliers or more. Returns `{ success, image, transformMatrix: { matrix2x3 }, inliers, timing }`: the matrix maps reference coordinates into the target resized to the reference's size; `image` is the target warped onto the reference (nearest neighbour, 0 outside). Only `affine`, `features+ecc`, `orb` and no polygon are supported; anything else is refused. `iterations` is 1-500, and the alignment copy at `scale` must be at least 32 px a side (ORB's pyramid): either is otherwise a RangeError. |
 
-The argument positions are those of the `@rosepetal/node-red-contrib-image-tools`
-cpp-bridge, which this replaces. `pngOptimize` true compresses a png
-output harder (zlib 9, adaptive filtering), false fast (zlib 1).
+Arguments are positional: the image first (for `imageAlign` the
+reference, then the target), the op's own parameters next, then the
+output's `fmt`, `quality` and `pngOptimize`, which every op takes in that
+order after its own (the table leaves `pngOptimize` out); `imageAlign`'s
+`returnImage` and alignment options follow them. `pngOptimize` true
+compresses a png output harder (zlib 9, adaptive filtering), false fast
+(zlib 1).
 
 Raw `data` must be a Buffer, Uint8Array or Uint8ClampedArray (a
 Float32Array or DataView is a TypeError), and not a resizable or growable
@@ -109,9 +113,8 @@ node native/manifest.js                            # rewrite prebuilds/manifest.
 `native/build-opencv.sh` builds the static OpenCV 5.0.0 from its release
 tarball (SHA-256 pinned in `prebuild-linux.sh`): 85 s in manylinux2014,
 150 s in musllinux, 90 s with MSVC on 16 threads. Two clean Linux builds
-give the same bytes; CI (`.github/workflows/prebuild.yml`, once this is
-its own repository) rebuilds the x64 ones and fails on any difference from
-the manifest. `node native/manifest.js --complete` runs before `npm
+give the same bytes; CI (`.github/workflows/prebuild.yml`) rebuilds the
+x64 ones and fails on any difference from the manifest. `node native/manifest.js --complete` runs before `npm
 publish` and refuses a package without all seven binaries.
 
 ## Licence

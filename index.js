@@ -6,10 +6,11 @@
  * bindings.
  *
  * Every op is async and checks every length against the dimensions before
- * native code touches a byte. The argument positions and reply shapes are
- * those of the @rosepetal/node-red-contrib-image-tools cpp-bridge, which
- * this replaces for node-red-contrib-vision-tools: raw images in and out
- * as { data, width, height, channels, colorSpace, dtype }. An encoded
+ * native code touches a byte. Arguments are positional - the image, the
+ * op's own parameters, then fmt, quality and pngOptimize - and every reply
+ * is { image, timing } plus the op's own fields (README), the surface
+ * node-red-contrib-vision-tools calls: raw images in and out as
+ * { data, width, height, channels, colorSpace, dtype }. An encoded
  * Buffer at colorConvert and a non-raw `fmt` go through sharp, so OpenCV
  * carries no codecs.
  *
@@ -258,7 +259,7 @@ function getSharp() {
 const RAW_FORMATS = new Set([undefined, null, "", "raw"]);
 
 /**
- * An encoded image as the bridge's imdecode(IMREAD_UNCHANGED) hands it on:
+ * An encoded image as OpenCV's imdecode(IMREAD_UNCHANGED) would hand it on:
  * its own channel count (1, 3 or 4; grey + alpha comes out as RGBA), 8 bit,
  * no EXIF rotation.
  */
@@ -392,8 +393,7 @@ async function resize(image, wMode, wVal, hMode, hVal, fmt, quality, pngOptimize
  *
  *   "otsu" - GaussianBlur(kernel, sigma 0; kernel 3-31), then a global Otsu
  *            threshold to a 0/255 mask. `blurred` is the blurred grey, a
- *            raw image of its own. (The rosepetal bridge wrote it back over
- *            the caller's input instead; nothing here writes to an input.)
+ *            raw image of its own; nothing here writes to an input.
  *   "edge" - Sobel magnitude, |gx|/2 + |gy|/2 scaled by `intensity`; a
  *            continuous grey map, not a binary edge map. Kernel 3-7: a
  *            chosen bound, the same on both engines, not a correctness
@@ -527,7 +527,7 @@ function goldenHandle(cv, ref, scale) {
  *   pngOptimize, returnImage, polygon, motion, pipeline, eccRefine, detector)
  *   -> { success, image, transformMatrix: { matrix2x3 }, inliers, timing }
  *
- * The bridge's imageAlign, for grey images, affine motion and the
+ * An ORB + ECC affine alignment, for grey images, affine motion and the
  * "features+ecc" pipeline with ORB; anything else is refused rather than
  * approximated. `scale` sizes the internal alignment copy, which must be
  * at least 32 px a side; `iterations` is ECC's, 1-500. The matrix maps

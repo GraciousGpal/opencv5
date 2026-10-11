@@ -204,7 +204,8 @@ test("imageAlign recovers a known shift and warps the frame onto the golden", { 
 });
 
 test("imageAlign recovers a shift on a 2048px golden at full scale", { skip }, async () => {
-	// the rosepetal bridge answers identity, success true, from ~1536px up
+	// an earlier OpenCV 4 addon with this surface answered identity,
+	// success true, from ~1536px up
 	const golden = texture(labelFrame(2048, 1536, 0, 1400, 1000, 1), 900);
 	const target = shifted(golden, 2048, 1536, 1, 11, -6);
 	const result = await own.imageAlign(golden, target, 1, 50, 1e-4, ...ALIGN_TAIL, "auto", "orb");

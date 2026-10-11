@@ -1,7 +1,6 @@
 // @graciousstar/opencv5's native half: a few vision ops as a plain N-API
 // addon over a minimal static OpenCV 5 (native/build-opencv.sh), wrapped
-// by index.js into the op surface of the @rosepetal/node-red-contrib-
-// image-tools cpp-bridge, which it replaces.
+// by index.js into its promise-returning op surface (README).
 //
 // Every op runs as async work on libuv's pool and returns a promise. No
 // pool thread ever touches memory JavaScript can reach:
@@ -26,11 +25,11 @@
 // Encoded images never reach this file: decoding and encoding go through
 // sharp (index.js), so OpenCV is built without codecs.
 //
-// align() is rosepetal image-tools 1.6.4's imageAlign for affine motion,
-// the features+ecc pipeline and ORB (ORB 800/1.2/5, Lowe 0.75,
-// estimateAffine2D USAC_MAGSAC 5 px, ECC skipped at >= 50 inliers in
-// "auto", nearest-neighbour inverse warp), minus its per-frame costs: the
-// golden's small copy, ORB features and ECC-normalised copy are made once
+// align() is an imageAlign for affine motion, the features+ecc pipeline
+// and ORB (ORB 800/1.2/5, Lowe 0.75, estimateAffine2D USAC_MAGSAC 5 px,
+// ECC skipped at >= 50 inliers in "auto", nearest-neighbour inverse
+// warp), with no per-frame setup for the reference: the golden's small
+// copy, ORB features and ECC-normalised copy are made once
 // per golden handle (createGolden; index.js keys handles by the golden's
 // content), and the frame's working copies live in buffers kept between
 // calls on each pool thread.
@@ -385,7 +384,7 @@ napi_value CvtColor(napi_env env, napi_callback_info info) {
 	return queue(env, job, "opencv5.cvtColor");
 }
 
-// resize(src, w, h, ch, dw, dh) -> { data }: INTER_LINEAR, as the bridge
+// resize(src, w, h, ch, dw, dh) -> { data }: INTER_LINEAR
 struct ResizeJob : Job {
 	cv::Mat src, dst;
 	void execute() override {
@@ -469,8 +468,8 @@ napi_value Filter(napi_env env, napi_callback_info info) {
 	return queue(env, job, "opencv5.filter");
 }
 
-// rotate(src, w, h, ch, dw, dh, angleDeg, p0, p1, p2, p3) -> { data }: the
-// bridge's rotate - getRotationMatrix2D about the source centre, shifted
+// rotate(src, w, h, ch, dw, dh, angleDeg, p0, p1, p2, p3) -> { data }:
+// getRotationMatrix2D about the source centre, shifted
 // to the centre of the dw x dh canvas the caller sized, INTER_LINEAR,
 // BORDER_CONSTANT in the pad colour (four numbers, so reading it runs no JS)
 struct RotateJob : Job {
@@ -550,7 +549,7 @@ napi_value ContentKey(napi_env env, napi_callback_info info) {
 
 cv::Ptr<cv::ORB> orb() { return cv::ORB::create(800, 1.2f, 5); }
 
-// rosepetal's ECC input: float, zero mean, unit deviation; false when flat
+// the ECC input: float, zero mean, unit deviation; false when flat
 bool eccPrepare(const cv::Mat& src, cv::Mat& dst) {
 	constexpr double eps = 1e-6;
 	src.convertTo(dst, CV_32F);
