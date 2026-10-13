@@ -1,6 +1,6 @@
 {
   "name": "@graciousstar/opencv5",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A few OpenCV 5 vision ops on raw image buffers - colorConvert, resize, filter, crop, rotate, ORB+ECC imageAlign - as a prebuilt N-API addon: async, bounds-checked, the same bytes on every CPU.",
   "license": "Apache-2.0",
   "author": "GraciousStar",
