@@ -93,9 +93,10 @@ CI runners built and tested. Windows (addon and OpenCV) is now built with
 MSVC's `/Brepro`, and the addon links with `/PDBALTPATH:%_PDB%`, so
 timestamps and the PDB path no longer vary between builds; its toolchain
 is the Visual Studio of the `windows-2022` runner image, not pinned. The
-shipped win32 binary below predates these flags: the win32 binary from
-the next CI run is committed by hand with its manifest hash, and the
-windows job then gets the same rebuild check the Linux x64 jobs have:
+windows job checks its rebuild against the manifest as the Linux x64 jobs
+do, which passes only while the committed win32 binary below is a CI
+build with these flags; it is the CI build of 40c01d7 (runs 38378693720
+and 38379900423 gave the same bytes):
 
 | binary | bytes | SHA-256 |
 |---|---|---|
@@ -105,7 +106,7 @@ windows job then gets the same rebuild check the Linux x64 jobs have:
 | linux-arm64/opencv5.musl.node | 6039456 | `d8875969aa6218009b6f3c277eebb7482281aec71738db298c70620030a2f359` |
 | linux-x64/opencv5.glibc.node | 6524632 | `4602771f58da4180f96c5e60c9198de747b4febf1f26b62350de3ed9f628f899` |
 | linux-x64/opencv5.musl.node | 7026640 | `db20ed3aab037ef282dc25b1376ad733faad13a040a072cffe93c2aa77098aec` |
-| win32-x64/opencv5.node | 5049856 | `578a2818a245ba9450d3047e61bcebd513fd065646debce8283228170058c445` |
+| win32-x64/opencv5.node | 5049856 | `16ef7fb5d2dff785be4b1e8b9430651c3c2c4d3dc03f78196607550b2238617b` |
 
 ## Building
 

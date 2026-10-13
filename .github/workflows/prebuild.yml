@@ -17,8 +17,9 @@
 # op's output bytes per arch (test/expected.json): every OS's binary of an
 # arch must give the same; a new arch's first run prints its bytes to pin.
 # The Windows binary is built with MSVC's /Brepro and /PDBALTPATH
-# (native/binding.gyp, native/build-opencv.sh); it has no rebuild check
-# yet, as the committed one predates those flags.
+# (native/binding.gyp, native/build-opencv.sh), and the windows job checks
+# its rebuild against the manifest as the Linux x64 jobs do; that holds
+# only while the committed win32 binary is a CI build with those flags.
 
 name: prebuild
 
@@ -195,14 +196,23 @@ jobs:
           mkdir -p "$(dirname "$OUT")"
           cp native/build/Release/opencv5.node "$OUT"
           p=native/build/opencv5.vcxproj
-          link=$(awk '/<Link>/ {on=1} on && /AdditionalOptions/ {print FILENAME ": " $0} /<\/Link>/ {on=0}' "$p")
-          echo "$link"
-          for f in /Brepro /PDBALTPATH:%_PDB%; do
-            echo "$link" | grep -qE "(^|[ >\"])$f([ <\"]|\$)" || { echo "::error::$p: no $f in Link AdditionalOptions"; exit 1; }
+          opts() { awk -v t="$1" '$0 ~ "<" t ">" {on=1} on && /AdditionalOptions/ {print FILENAME ": " $0} $0 ~ "</" t ">" {on=0}' "$p"; }
+          for tf in ClCompile:/Brepro Link:/Brepro Link:/PDBALTPATH:%_PDB%; do
+            t=${tf%%:*} f=${tf#*:}
+            o=$(opts "$t")
+            echo "$o"
+            echo "$o" | grep -qE "(^|[ >\"])$f([ <\"]|\$)" || { echo "::error::$p: no $f in $t AdditionalOptions"; exit 1; }
           done
           rm -rf native/build
           ls -l "$OUT"
-          node native/manifest.js > /dev/null
+
+      - name: Check the rebuild is the committed binary
+        run: node native/manifest.js --check "$OUT"
+
+      # The loader checks every prebuild against the manifest, so the one
+      # just built must be in it
+      - name: List the binary in the manifest
+        run: node native/manifest.js > /dev/null
 
       - run: npm install --no-audit --no-fund
 
