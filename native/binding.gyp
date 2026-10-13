@@ -6,7 +6,12 @@
 	#
 	# gives build/Release/opencv5.node, the name index.js loads with OPENCV5_ADDON.
 	# MSVC: the static CRT (/MT) OpenCV was built with, /fp:precise, C++17,
-	# exceptions on (OpenCV reports errors by throwing).
+	# exceptions on (OpenCV reports errors by throwing). /Brepro on compiler
+	# and linker puts content hashes where MSVC writes timestamps, and
+	# /PDBALTPATH:%_PDB% records only the PDB's file name, not the build
+	# directory, so two builds of the same source on the same runner image
+	# and workspace path give the same bytes (__FILE__ strings from the
+	# OpenCV build embed its build path).
 	"targets": [
 		{
 			"target_name": "opencv5",
@@ -20,7 +25,10 @@
 					"Optimization": 2,
 					"RuntimeLibrary": 0,
 					"ExceptionHandling": 1,
-					"AdditionalOptions": ["/fp:precise", "/std:c++17"]
+					"AdditionalOptions": ["/fp:precise", "/std:c++17", "/Brepro"]
+				},
+				"VCLinkerTool": {
+					"AdditionalOptions": ["/Brepro", "/PDBALTPATH:%_PDB%"]
 				}
 			}
 		}

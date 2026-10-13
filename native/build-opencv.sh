@@ -60,12 +60,21 @@ case "$(uname -s)" in
 MINGW* | MSYS* | CYGWIN*)
 	# Windows, from git-bash: MSVC through its own generator (no vcvars
 	# needed) and its default flags, static CRT as node-gyp links the
-	# addon; MSVC contracts no FMA at its default /fp:precise
-	set -- -G "Visual Studio 17 2022" -A x64 -DBUILD_WITH_STATIC_CRT=ON
+	# addon; MSVC contracts no FMA at its default /fp:precise. /Brepro
+	# (compiler and librarian) writes content hashes where MSVC writes
+	# timestamps, so the .obj and .lib bytes do not depend on the time;
+	# the _INIT variables add it in front of CMake's MSVC defaults rather
+	# than replacing them. The addon's link sets the PDB path. No MSYS
+	# path conversion: it would turn /Brepro into C:/Program Files/Git/Brepro
+	# (the paths below are cygpath -m'd).
+	export MSYS_NO_PATHCONV=1
+	set -- -G "Visual Studio 17 2022" -A x64 -DBUILD_WITH_STATIC_CRT=ON \
+		-DCMAKE_C_FLAGS_INIT=/Brepro -DCMAKE_CXX_FLAGS_INIT=/Brepro \
+		-DCMAKE_STATIC_LINKER_FLAGS_INIT=/Brepro
 	# cmake.exe takes Windows paths, not /tmp. /tmp is the builder's own
 	# Temp folder here, so a Windows build carries that path (user name
-	# included) in its __FILE__ strings and is not byte-reproducible
-	# across machines; the Linux builds are.
+	# included) in its __FILE__ strings: the same on every run of one
+	# runner image, different between machines.
 	srcdir=$(cygpath -m "$srcdir")
 	build=$(cygpath -m "$build")
 	prefix=$(cygpath -m "$prefix")
@@ -97,4 +106,6 @@ cmake --build "$build" --config Release --target install -j "$jobs" >"$work/buil
 end=$(date +%s)
 echo "opencv built in $((end - start)) s"
 find "$prefix" -name '*.a' -o -name '*.lib' | xargs ls -l
-rm -rf "$work"
+# OPENCV_KEEP_BUILD=1 leaves the build tree in /tmp/opencv-build/build, for
+# CI to check the flags its project files pass
+[ -n "${OPENCV_KEEP_BUILD:-}" ] || rm -rf "$work"

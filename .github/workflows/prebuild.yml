@@ -7,20 +7,18 @@
 #   prebuilds/manifest.json
 #
 # It builds and tests only; nothing is committed or published from here.
-# Each job first builds a static OpenCV 5 (several minutes on a hosted
+# Each build job first builds a static OpenCV 5 (several minutes on a hosted
 # runner) and caches it under a key of native/build-opencv.sh and
 # native/prebuild-linux.sh, which pin the image digests and the OpenCV
 # tarball's SHA-256, so it is rebuilt only when one of them changes.
 # The Linux binaries are built in images pinned by digest, so the same
-# source gives the same bytes: the x64 jobs fail when a rebuild differs
-# from the committed manifest. Every job also runs the test that pins each
+# source gives the same bytes: the Linux x64 jobs fail when a rebuild differs
+# from the committed manifest. Every build job also runs the test that pins each
 # op's output bytes per arch (test/expected.json): every OS's binary of an
 # arch must give the same; a new arch's first run prints its bytes to pin.
-#
-# It runs once this directory is its own repository (GitHub reads only a
-# repository's top-level .github/). Written from the documentation of the
-# runners, actions and images and not run yet: expect the first run to
-# need fixes.
+# The Windows binary is built with MSVC's /Brepro and /PDBALTPATH
+# (native/binding.gyp, native/build-opencv.sh); it has no rebuild check
+# yet, as the committed one predates those flags.
 
 name: prebuild
 
@@ -166,7 +164,29 @@ jobs:
           sum=$(sed -n 's/^OPENCV_SHA256=//p' native/prebuild-linux.sh)
           curl -fsSL -o "$tmp/opencv.tar.gz" "https://github.com/opencv/opencv/archive/refs/tags/$v.tar.gz"
           echo "$sum  $tmp/opencv.tar.gz" | sha256sum -c -
-          sh native/build-opencv.sh "$tmp/opencv.tar.gz" "$OPENCV_PREFIX"
+          OPENCV_KEEP_BUILD=1 sh native/build-opencv.sh "$tmp/opencv.tar.gz" "$OPENCV_PREFIX"
+
+      # The flags in the generated projects, so a CMake change that drops
+      # them fails here. The build tree is not cached: this runs only when
+      # OpenCV was built, not on a cache hit
+      - name: Check OpenCV's projects pass /Brepro
+        if: steps.opencv.outputs.cache-hit != 'true'
+        run: |
+          opts() { awk -v t="$2" '$0 ~ "<" t ">" {on=1} on && /AdditionalOptions/ {print FILENAME ": " $0} $0 ~ "</" t ">" {on=0}' "$1"; }
+          b=/tmp/opencv-build/build
+          ok=1
+          for p in "$b/modules/core/opencv_core.vcxproj" "$b"/3rdparty/*/*.vcxproj; do
+            [ -f "$p" ] || { echo "::error::$p: not generated"; ok=0; continue; }
+            # a utility project (no sources) has no compile or lib step
+            grep -q '<ClCompile Include' "$p" || continue
+            # an OBJECT library has no <Lib> block, so no librarian step
+            for t in ClCompile Lib; do
+              grep -q "<$t>" "$p" || continue
+              opts "$p" "$t" | grep -E '(^|[ >"])/Brepro([ <"]|$)' || { echo "::error::$p: no /Brepro in $t AdditionalOptions"; ok=0; }
+            done
+          done
+          rm -rf /tmp/opencv-build
+          [ $ok = 1 ]
 
       - name: Build the addon with node-gyp
         run: |
@@ -174,6 +194,12 @@ jobs:
           (cd native && npx --yes node-gyp@12.4.0 rebuild)
           mkdir -p "$(dirname "$OUT")"
           cp native/build/Release/opencv5.node "$OUT"
+          p=native/build/opencv5.vcxproj
+          link=$(awk '/<Link>/ {on=1} on && /AdditionalOptions/ {print FILENAME ": " $0} /<\/Link>/ {on=0}' "$p")
+          echo "$link"
+          for f in /Brepro /PDBALTPATH:%_PDB%; do
+            echo "$link" | grep -qE "(^|[ >\"])$f([ <\"]|\$)" || { echo "::error::$p: no $f in Link AdditionalOptions"; exit 1; }
+          done
           rm -rf native/build
           ls -l "$OUT"
           node native/manifest.js > /dev/null

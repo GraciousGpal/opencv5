@@ -89,7 +89,13 @@ changes while it runs; `_reset()` forgets it.
 The shipped binaries (`prebuilds/manifest.json` holds their sizes and
 SHA-256). The Linux ones rebuild to the same bytes with
 `native/prebuild-linux.sh`; the Windows and macOS ones are the bytes their
-CI runners built and tested:
+CI runners built and tested. Windows (addon and OpenCV) is now built with
+MSVC's `/Brepro`, and the addon links with `/PDBALTPATH:%_PDB%`, so
+timestamps and the PDB path no longer vary between builds; its toolchain
+is the Visual Studio of the `windows-2022` runner image, not pinned. The
+shipped win32 binary below predates these flags: the win32 binary from
+the next CI run is committed by hand with its manifest hash, and the
+windows job then gets the same rebuild check the Linux x64 jobs have:
 
 | binary | bytes | SHA-256 |
 |---|---|---|
